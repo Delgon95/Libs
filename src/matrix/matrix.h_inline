@@ -1,9 +1,11 @@
+#include <cassert>
 #include <cmath>
+
 namespace delgon {
 namespace {
 
 template <class T>
-bool IsZero(T value, T eps) {
+bool IsZero(T value, T eps = 1e-12) {
   return (std::fabs(value) < eps);
 }
 
@@ -134,6 +136,149 @@ Matrix<T>& Matrix<T>::operator= (Matrix<T>&& rhs) {
 
 /*
  *
+ * Basic Operations
+ *
+ *
+*/
+
+template <class T>
+Matrix<T> Matrix<T>::operator+ (const Matrix<T>& rhs) const {
+  // Check matrices are - MxN * MxN.
+  assert(num_rows() == rhs.num_rows() ||
+         num_columns() == rhs.num_columns());
+
+  Matrix<T> added(num_rows(), num_columns());
+  for (size_t i = 0; i < num_rows(); ++i) {
+    for (size_t j = 0; j < num_columns(); ++j) {
+      added[i][j] = mat_[i][j] + rhs[i][j];
+    }
+  }
+  return added;
+}
+
+template <class T>
+Matrix<T> Matrix<T>::operator* (const T& rhs) const {
+  Matrix<T> multiplied(num_rows(), num_columns());
+  for (size_t i = 0; i < num_rows(); ++i) {
+    for (size_t j = 0; j < num_columns(); ++j) {
+      multiplied[i][j] = mat_[i][j] * rhs;
+    }
+  }
+  return multiplied;
+}
+
+template <class T>
+Matrix<T> Matrix<T>::operator* (const Matrix<T>& rhs) const {
+  // Check matrices are MxN * NxP
+  assert(num_columns() == rhs.num_rows());
+
+  Matrix<T> multiplied(num_rows(), rhs.num_columns(), T{0});
+  for (size_t i = 0; i < num_rows(); ++i) {
+    for (size_t j = 0; j < rhs.num_columns(); ++j) {
+      for (size_t k = 0; k < num_columns(); ++k)
+        multiplied[i][j] += mat_[i][k] * rhs[k][j];
+    }
+  }
+  return multiplied;
+}
+
+template <class T>
+Matrix<T> Matrix<T>::Transpose() const {
+  Matrix<T> transposed(num_columns(), num_rows());
+  for (size_t i = 0; i < num_rows(); ++i) {
+    for (size_t j = 0; j < num_columns(); ++j) {
+      transposed[j][i] = mat_[i][j];
+    }
+  }
+  return transposed;
+}
+
+template <class T>
+Matrix<T>& Matrix<T>::TransposeInplace () {
+  mat_ = std::move(this->Transpose().mat_);
+  return *this;
+}
+
+template <class T>
+Matrix<T>& Matrix<T>::RowAdditionInplace(size_t add_to, size_t add_from) {
+  // Check if rows are within range.
+  assert(add_to < num_rows() &&
+         add_from < num_rows());
+
+  for (size_t i = 0; i < num_columns(); ++i)
+    mat_[add_to][i] += mat_[add_from][i];
+
+  return *this;
+}
+
+template <class T>
+Matrix<T>& Matrix<T>::RowMultiplicationInplace(size_t row, const T& value) {
+  // Check if row is within range and if value is != 0;
+  assert(row < num_rows() &&
+         !IsZero(value));
+
+  for (size_t i = 0; i < num_columns(); ++i)
+    mat_[row][i] *= value;
+
+  return *this;
+}
+
+template <class T>
+Matrix<T>& Matrix<T>::RowSwitchInplace(size_t row1, size_t row2) {
+  // Check if rows are within range.
+  assert(row1 < num_rows() &&
+         row2 < num_rows());
+
+  std::swap(mat_[row1], mat_[row2]);
+
+  return *this;
+}
+
+template <class T>
+Matrix<T> Matrix<T>::RowAddition(size_t add_to, size_t add_from) const {
+  return Matrix<T>(*this).RowAdditionInplace(add_to, add_from);
+}
+
+template <class T>
+Matrix<T> Matrix<T>::RowMultiplication(size_t row, const T& value) const {
+  return Matrix<T>(*this).RowMultiplicationInplace(row, value);
+}
+
+template <class T>
+Matrix<T> Matrix<T>::RowSwitch(size_t row1, size_t row2) const {
+  return Matrix<T>(*this).RowSwitchInplace(row1, row2);
+}
+
+template <class T>
+Matrix<T>& Matrix<T>::SubmatrixInplace(std::vector<size_t> rows,
+                                       std::vector<size_t> columns) {
+  // Erase rows.
+  std::sort(rows.begin(), rows.end(), std::greater<T>());
+  for (const auto& row : rows) {
+    assert(row < num_rows());
+    mat_.erase(mat_.begin() + row);
+  }
+
+  // Erase columns.
+  std::sort(columns.begin(), columns.end(), std::greater<T>());
+  // Iterate from behind to avoid num_columns() change in value.
+  for (size_t i = num_rows(); i > 0; --i) {
+    for (const auto& column : columns) {
+      assert(column < num_columns());
+      mat_[i - 1].erase(mat_[i - 1].begin() + column);
+    }
+  }
+  return *this;
+}
+
+template <class T>
+Matrix<T> Matrix<T>::Submatrix(const std::vector<size_t>& rows,
+                               const std::vector<size_t>& columns) const {
+  return Matrix<T>(*this).SubmatrixInplace(rows, columns);
+}
+
+/*
+ *
  * Others
  *
 */
@@ -144,7 +289,7 @@ template <class T> template <class Y>
 bool Matrix<T>::equal(const Matrix<Y>& mat_y, T eps) {
   if (num_rows() != mat_y.num_rows() || num_columns() != mat_y.num_columns())
     return false;
-  if (eps <= 0.0) {
+  if (std::signbit(eps)) {
     for (size_t i = 0; i < num_rows(); ++i) {
       for (size_t j = 0; j < num_columns(); ++j) {
         if (mat_[i][j] != T{mat_y[i][j]})

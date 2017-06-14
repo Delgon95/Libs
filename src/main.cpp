@@ -47,7 +47,6 @@ int main() {
   if (mat_f.equal(mat_f2))
     std::cout << "The same 5\n\n";
 
-
   // Copy constructor + Copy
   mat_f = mat_f2;
   // Move
@@ -60,6 +59,32 @@ int main() {
   mat_f = delgon::Matrix<double>(mat_f3);
   // Move Constructor + Move
   mat_f = delgon::Matrix<float>(std::move(mat_f3));
+
+  // Basic operations
+  delgon::Matrix<double> op_1(3, 6, 1);
+  PrintMatrix(op_1);
+  PrintMatrix(op_1 + delgon::Matrix<double>(3, 6, 2) + op_1);
+  PrintMatrix(op_1 * 2.5);
+  // TODO
+  // PrintMatrix(2.5 * op_1);
+
+  PrintMatrix(op_1.Transpose());
+  PrintMatrix(op_1);
+  PrintMatrix(op_1.TransposeInplace());
+  PrintMatrix(op_1);
+  PrintMatrix(delgon::Matrix<double>(3, 3, 2) *
+              delgon::Matrix<double>(3, 3, 3));
+
+  PrintMatrix(op_1.RowMultiplication(3, 4));
+  PrintMatrix(op_1.RowAddition(2, 3));
+  PrintMatrix(op_1.RowSwitch(2, 0));
+  PrintMatrix(op_1.RowMultiplicationInplace(3, 4));
+  PrintMatrix(op_1.RowAdditionInplace(2, 3));
+  PrintMatrix(op_1.RowSwitchInplace(2, 0));
+  op_1[1][1] = 9;
+  PrintMatrix(op_1.Submatrix({0, 1}, {2, 0}));
+  PrintMatrix(op_1.SubmatrixInplace({0, 1}, {2, 0}));
+  PrintMatrix(op_1);
 
   return 0;
 }
