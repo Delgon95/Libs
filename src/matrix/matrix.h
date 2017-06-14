@@ -3,45 +3,50 @@
 
 #include <vector>
 
-using std::vector;
+namespace delgon {
 
 template <class T>
 class Matrix {
  public:
   // Constructors.
-  Matrix(const T& mat);
+  Matrix(Matrix<T>&& matrix);
+  Matrix(const Matrix<T>& matrix);
   Matrix(size_t rows, size_t columns);
   Matrix(size_t rows, size_t columns, T base_value);
 
+  // Cast constructor.
+  template <class Y> Matrix(const Matrix<Y>& matrix);
+
   // Getters
-  size_t rows() const;
-  size_t columns() const;
-  const vector<vector<T>>& mat() const;
+  size_t num_rows() const;
+  size_t num_columns() const;
 
-  // Iterators.
-  typedef typename vector<T>::iterator iterator;
-  typename vector<vector<T>>::iterator begin();
-  typename vector<vector<T>>::iterator end();
+  // Iterators - iterates over rows in the matrix.
+  typename std::vector<std::vector<T>>::iterator begin();
+  typename std::vector<std::vector<T>>::iterator end();
 
-  typedef typename vector<T>::const_iterator const_iterator;
-  typename vector<vector<T>>::const_iterator begin() const;
-  typename vector<vector<T>>::const_iterator end() const;
+  typename std::vector<std::vector<T>>::const_iterator begin() const;
+  typename std::vector<std::vector<T>>::const_iterator end() const;
 
   // Operators.
-  vector<T>& operator[] (size_t id);
-  const vector<T>& operator[] (size_t id) const;
+  // Returns a whole row.
+  std::vector<T>& operator[] (size_t id);
+  const std::vector<T>& operator[] (size_t id) const;
+
   bool operator== (const Matrix<T>& rhs) const;
   bool operator!= (const Matrix<T>& rhs) const;
-  template <class Y> Matrix<T>& operator= (const Matrix<Y>& rhs);
+  Matrix<T>& operator= (const Matrix<T>& rhs);
+  Matrix<T>& operator= (Matrix<T>&& rhs);
 
-  // Comparator with eps.
+  // Comparator with eps. Cast every value 'Y' to 'T' before comparison.
   template <class Y>
   bool equal(const Matrix<Y>& mat_y, T eps = 0);
 
  private:
-  vector<vector<T>> mat_;
+  std::vector<std::vector<T>> mat_;
 };
 
 
+} // namespace delgon
 #include "matrix.h_inline"
 #endif // MATRIX_H_

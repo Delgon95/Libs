@@ -1,5 +1,5 @@
 #include <cmath>
-
+namespace delgon {
 namespace {
 
 template <class T>
@@ -16,16 +16,33 @@ bool IsZero(T value, T eps) {
 */
 
 template <class T>
-Matrix<T>::Matrix(const T& mat)
-    : mat_(mat) {}
+delgon::Matrix<T>::Matrix(Matrix<T>&& matrix)
+    : mat_(std::move(matrix.mat_)) {
+}
+
+template <class T>
+Matrix<T>::Matrix(const Matrix<T>& matrix)
+    : mat_(matrix.mat_) {
+}
 
 template <class T>
 Matrix<T>::Matrix(size_t rows, size_t columns)
-    : mat_(vector<vector<T>>(rows, vector<T>(columns))) {}
+    : mat_(std::vector<std::vector<T>>(rows, std::vector<T>(columns))) {
+}
 
 template <class T>
 Matrix<T>::Matrix(size_t rows, size_t columns, T value)
-    : mat_(vector<vector<T>>(rows, vector<T>(columns, value))) {}
+    : mat_(std::vector<std::vector<T>>(rows, std::vector<T>(columns, value))) {
+}
+
+template <class T> template <class Y>
+Matrix<T>::Matrix(const Matrix<Y>& matrix) {
+  mat_.resize(matrix.num_rows());
+
+  for (size_t i = 0; i < matrix.num_rows(); ++i) {
+    mat_[i] = std::vector<T>(matrix[i].begin(), matrix[i].end());
+  }
+}
 
 /*
  *
@@ -34,18 +51,14 @@ Matrix<T>::Matrix(size_t rows, size_t columns, T value)
 */
 
 template <class T>
-size_t Matrix<T>::rows() const {
+size_t Matrix<T>::num_rows() const {
   return mat_.size();
 }
 
 template <class T>
-size_t Matrix<T>::columns() const {
-  return mat_.begin()->size();
-}
-
-template <class T>
-const vector<vector<T>>& Matrix<T>::mat() const {
-  return mat_;
+size_t Matrix<T>::num_columns() const {
+  return (mat_.size()) ? mat_.begin()->size()
+                       : 0;
 }
 
 /*
@@ -55,22 +68,22 @@ const vector<vector<T>>& Matrix<T>::mat() const {
 */
 
 template <class T>
-typename vector<vector<T>>::iterator Matrix<T>::begin() {
+typename std::vector<std::vector<T>>::iterator Matrix<T>::begin() {
   return mat_.begin();
 }
 
 template <class T>
-typename vector<vector<T>>::iterator Matrix<T>::end() {
+typename std::vector<std::vector<T>>::iterator Matrix<T>::end() {
   return mat_.end();
 }
 
 template <class T>
-typename vector<vector<T>>::const_iterator Matrix<T>::begin() const {
+typename std::vector<std::vector<T>>::const_iterator Matrix<T>::begin() const {
   return mat_.begin();
 }
 
 template <class T>
-typename vector<vector<T>>::const_iterator Matrix<T>::end() const {
+typename std::vector<std::vector<T>>::const_iterator Matrix<T>::end() const {
   return mat_.end();
 }
 
@@ -81,22 +94,23 @@ typename vector<vector<T>>::const_iterator Matrix<T>::end() const {
 */
 
 template <class T>
-vector<T>& Matrix<T>::operator[] (size_t id) {
+std::vector<T>& Matrix<T>::operator[] (size_t id) {
   return mat_[id];
 }
 
 template <class T>
-const vector<T>& Matrix<T>::operator[] (size_t id) const {
+const std::vector<T>& Matrix<T>::operator[] (size_t id) const {
   return mat_[id];
 }
 
 template <class T>
 bool Matrix<T>::operator== (const Matrix<T>& rhs) const {
-  if (this->rows() != rhs.rows() || this->columns() != rhs.columns())
+  if (num_rows() != rhs.num_rows() || num_columns() != rhs.num_columns())
     return false;
-  for (size_t i = 0; i < this->rows(); ++i)
+  for (size_t i = 0; i < num_rows(); ++i) {
     if (mat_[i] != rhs[i])
       return false;
+  }
   return true;
 }
 
@@ -105,17 +119,16 @@ bool Matrix<T>::operator!= (const Matrix<T>& rhs) const {
   return !(*this == rhs);
 }
 
-template <class T> template <class Y>
-Matrix<T>& Matrix<T>::operator= (const Matrix<Y>& rhs) {
-  // Resize and allocate all needed memory.
-  mat_ = vector<vector<T>>(rhs.rows());
-  size_t resize_to = rhs.columns();
-  for (auto& row : mat_)
-    row.reserve(resize_to);
 
-  for (size_t i = 0; i < rhs.rows(); ++i)
-    mat_[i] = vector<T>(rhs[i].begin(), rhs[i].end());
+template <class T>
+Matrix<T>& Matrix<T>::operator= (const Matrix<T>& rhs) {
+  mat_ = rhs.mat_;
+  return *this;
+}
 
+template <class T>
+Matrix<T>& Matrix<T>::operator= (Matrix<T>&& rhs) {
+  mat_ = std::move(rhs.mat_);
   return *this;
 }
 
@@ -129,19 +142,25 @@ Matrix<T>& Matrix<T>::operator= (const Matrix<Y>& rhs) {
 // Compare with eps value for floating point matrices.
 template <class T> template <class Y>
 bool Matrix<T>::equal(const Matrix<Y>& mat_y, T eps) {
-  if (this->rows() != mat_y.rows() || this->columns() != mat_y.columns())
+  if (num_rows() != mat_y.num_rows() || num_columns() != mat_y.num_columns())
     return false;
   if (eps <= 0.0) {
-    for (size_t i = 0; i < mat_.size(); ++i)
-      for (size_t j = 0; j < mat_.begin()->size(); ++j)
-        if (mat_[i][j] != T(mat_y[i][j]))
+    for (size_t i = 0; i < num_rows(); ++i) {
+      for (size_t j = 0; j < num_columns(); ++j) {
+        if (mat_[i][j] != T{mat_y[i][j]})
           return false;
+      }
+    }
   } else {
     // Check if near equal.
-    for (size_t i = 0; i < mat_.size(); ++i)
-      for (size_t j = 0; j < mat_.begin()->size(); ++j)
+    for (size_t i = 0; i < num_rows(); ++i) {
+      for (size_t j = 0; j < num_columns(); ++j) {
         if (!IsZero(mat_[i][j] - T(mat_y[i][j]), eps))
           return false;
+      }
+    }
   }
   return true;
 }
+
+} // namesapce delgon
