@@ -292,7 +292,7 @@ bool Matrix<T>::equal(const Matrix<Y>& mat_y, T eps) {
   if (std::signbit(eps)) {
     for (size_t i = 0; i < num_rows(); ++i) {
       for (size_t j = 0; j < num_columns(); ++j) {
-        if (mat_[i][j] != T{mat_y[i][j]})
+        if (mat_[i][j] != static_cast<T>(mat_y[i][j]))
           return false;
       }
     }
@@ -300,7 +300,7 @@ bool Matrix<T>::equal(const Matrix<Y>& mat_y, T eps) {
     // Check if near equal.
     for (size_t i = 0; i < num_rows(); ++i) {
       for (size_t j = 0; j < num_columns(); ++j) {
-        if (!IsZero(mat_[i][j] - T(mat_y[i][j]), eps))
+        if (!IsZero(mat_[i][j] - static_cast<T>(mat_y[i][j]), eps))
           return false;
       }
     }
