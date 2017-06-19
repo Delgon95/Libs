@@ -41,32 +41,31 @@ class Matrix {
   // Basic Operations
   // Addition
   Matrix<T> operator+ (const Matrix<T>& rhs) const;
+  Matrix<T>& operator+= (const Matrix<T>& rhs);
+  Matrix<T> operator+ (T rhs) const;
+  Matrix<T>& operator+= (T rhs);
 
-  // Scalar multiplication
-  Matrix<T> operator* (const T& rhs) const;
+  // Matrix scalars
+  Matrix<T> operator* (T rhs) const;
+  Matrix<T>& operator*= (T rhs);
+
+  Matrix<T> operator/ (T rhs) const;
+  Matrix<T>& operator/= (T rhs);
 
   // Matrix multiplication
   Matrix<T> operator* (const Matrix<T>& rhs) const;
+  Matrix<T>& operator*= (const Matrix<T>& rhs);
 
   // Transposition
-  Matrix<T> Transpose() const;
-  Matrix<T>& TransposeInplace();
+  Matrix<T>& Transpose();
 
   // Row Operations
-  Matrix<T> RowAddition(size_t add_to, size_t add_from) const;
-  Matrix<T>& RowAdditionInplace(size_t add_to, size_t add_from);
-  Matrix<T> RowMultiplication(size_t row, const T& value) const;
-  Matrix<T>& RowMultiplicationInplace(size_t row, const T& value);
-  Matrix<T> RowSwitch(size_t row1, size_t row2) const;
-  Matrix<T>& RowSwitchInplace(size_t row1, size_t row2);
-
-  // Submatrix
-  // rows: Selected rows id's
-  // columns: Selected columns id's
-  Matrix<T> Submatrix(const std::vector<size_t>& rows,
-                      const std::vector<size_t>& columns) const;
-  Matrix<T>& SubmatrixInplace(std::vector<size_t> rows,
-                              std::vector<size_t> columns);
+  // TODO
+  // Add Row / Column for these types of operations
+  // for more clarity
+  Matrix<T>& RowAddition(size_t add_to, size_t add_from);
+  Matrix<T>& RowMultiplication(size_t row, T value);
+  Matrix<T>& RowSwitch(size_t row1, size_t row2);
 
   // Comparator with eps. Cast every value 'Y' to 'T' before comparison.
   template <class Y>
@@ -76,6 +75,16 @@ class Matrix {
   std::vector<std::vector<T>> mat_;
 };
 
+
+// Functions for not in place changes.
+template <class T>
+Matrix<T> Transpose(const Matrix<T>& matrix);
+template <class T>
+Matrix<T> RowAddition(const Matrix<T>& matrix, size_t add_to, size_t add_from);
+template <class T>
+Matrix<T> RowMultiplication(const Matrix<T>& matrix, size_t row, T value);
+template <class T>
+Matrix<T> RowSwitch(const Matrix<T>& matrix, size_t row1, size_t row2);
 
 } // namespace delgon
 #include "matrix.h_inline"

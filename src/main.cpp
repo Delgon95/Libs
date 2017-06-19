@@ -19,7 +19,7 @@ int main() {
   delgon::Matrix<double> mat_d(2, 3, 5);
   delgon::Matrix<float> mat_f(2, 3, 5);
   delgon::Matrix<float> mat_f2(4, 8, 5);
-  delgon::Matrix<float> mat_f3(44, 21,123.123);
+  delgon::Matrix<float> mat_f3(44, 21, 123.123f);
 
   PrintMatrix(mat_f2);
   mat_f2[0][1] = 2;
@@ -70,20 +70,13 @@ int main() {
 
   PrintMatrix(op_1.Transpose());
   PrintMatrix(op_1);
-  PrintMatrix(op_1.TransposeInplace());
-  PrintMatrix(op_1);
   PrintMatrix(delgon::Matrix<double>(3, 3, 2) *
               delgon::Matrix<double>(3, 3, 3));
 
   PrintMatrix(op_1.RowMultiplication(3, 4));
   PrintMatrix(op_1.RowAddition(2, 3));
   PrintMatrix(op_1.RowSwitch(2, 0));
-  PrintMatrix(op_1.RowMultiplicationInplace(3, 4));
-  PrintMatrix(op_1.RowAdditionInplace(2, 3));
-  PrintMatrix(op_1.RowSwitchInplace(2, 0));
   op_1[1][1] = 9;
-  PrintMatrix(op_1.Submatrix({0, 1}, {2, 0}));
-  PrintMatrix(op_1.SubmatrixInplace({0, 1}, {2, 0}));
   PrintMatrix(op_1);
 
   return 0;
