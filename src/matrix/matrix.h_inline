@@ -1,0 +1,379 @@
+#include <cassert>
+#include <cmath>
+
+namespace delgon {
+namespace {
+
+template <class T>
+bool IsZero(T value, T eps = 1e-16) {
+  return (std::fabs(value) < eps);
+}
+
+} // namespace
+
+/*
+ *
+ * Constructors
+ *
+*/
+
+template <class T>
+Matrix<T>::Matrix(Matrix<T>&& matrix)
+    : mat_(std::move(matrix.mat_)) {
+}
+
+template <class T>
+Matrix<T>::Matrix(const Matrix<T>& matrix)
+    : mat_(matrix.mat_) {
+}
+
+template <class T>
+Matrix<T>::Matrix(size_t rows, size_t columns)
+    : mat_(std::vector<std::vector<T>>(rows, std::vector<T>(columns))) {
+}
+
+template <class T>
+Matrix<T>::Matrix(size_t rows, size_t columns, T value)
+    : mat_(std::vector<std::vector<T>>(rows, std::vector<T>(columns, value))) {
+}
+
+template <class T> template <class Y>
+Matrix<T>::Matrix(const Matrix<Y>& matrix) {
+  mat_.resize(matrix.num_rows());
+
+  for (size_t i = 0; i < matrix.num_rows(); ++i) {
+    mat_[i] = std::vector<T>(matrix[i].begin(), matrix[i].end());
+  }
+}
+
+/*
+ *
+ * Getters
+ *
+*/
+
+template <class T>
+size_t Matrix<T>::num_rows() const {
+  return mat_.size();
+}
+
+template <class T>
+size_t Matrix<T>::num_columns() const {
+  return (mat_.size()) ? mat_.begin()->size()
+                       : 0;
+}
+
+/*
+ *
+ * Iterators
+ *
+*/
+
+template <class T>
+typename std::vector<std::vector<T>>::iterator Matrix<T>::begin() {
+  return mat_.begin();
+}
+
+template <class T>
+typename std::vector<std::vector<T>>::iterator Matrix<T>::end() {
+  return mat_.end();
+}
+
+template <class T>
+typename std::vector<std::vector<T>>::const_iterator Matrix<T>::begin() const {
+  return mat_.begin();
+}
+
+template <class T>
+typename std::vector<std::vector<T>>::const_iterator Matrix<T>::end() const {
+  return mat_.end();
+}
+
+/*
+ *
+ * Operators
+ *
+*/
+
+template <class T>
+std::vector<T>& Matrix<T>::operator[] (size_t id) {
+  return mat_[id];
+}
+
+template <class T>
+const std::vector<T>& Matrix<T>::operator[] (size_t id) const {
+  return mat_[id];
+}
+
+template <class T>
+bool Matrix<T>::operator== (const Matrix<T>& rhs) const {
+  if (num_rows() != rhs.num_rows() || num_columns() != rhs.num_columns())
+    return false;
+  for (size_t i = 0; i < num_rows(); ++i) {
+    if (mat_[i] != rhs[i])
+      return false;
+  }
+  return true;
+}
+
+template <class T>
+bool Matrix<T>::operator!= (const Matrix<T>& rhs) const {
+  return !(*this == rhs);
+}
+
+
+template <class T>
+Matrix<T>& Matrix<T>::operator= (const Matrix<T>& rhs) {
+  mat_ = rhs.mat_;
+  return *this;
+}
+
+template <class T>
+Matrix<T>& Matrix<T>::operator= (Matrix<T>&& rhs) {
+  mat_ = std::move(rhs.mat_);
+  return *this;
+}
+
+/*
+ *
+ * Basic Operations
+ *
+ *
+*/
+
+template <class T>
+Matrix<T> Matrix<T>::operator+ (const Matrix<T>& rhs) const {
+  // Check if matrix sizes are the same.
+  assert(num_rows() == rhs.num_rows() && num_columns() == rhs.num_columns());
+  Matrix<T> added(*this);
+  for (size_t i = 0; i < num_rows(); ++i) {
+    for (size_t j = 0; j < num_columns(); ++j) {
+      added[i][j] += rhs[i][j];
+    }
+  }
+  return added;
+}
+
+template <class T>
+Matrix<T>& Matrix<T>::operator+= (const Matrix<T>& rhs) {
+  // Check if matrix sizes are the same.
+  assert(num_rows() == rhs.num_rows() && num_columns() == rhs.num_columns());
+  for (size_t i = 0; i < num_rows(); ++i) {
+    for (size_t j = 0; j < num_columns(); ++j) {
+      mat_[i][j] += rhs[i][j];
+    }
+  }
+  return *this;
+}
+
+template <class T>
+Matrix<T> Matrix<T>::operator+ (T rhs) const {
+  Matrix<T> added(*this);
+  for (size_t i = 0; i < num_rows(); ++i) {
+    for (size_t j = 0; j < num_columns(); ++j) {
+      added[i][j] += rhs;
+    }
+  }
+  return added;
+}
+
+template <class T>
+Matrix<T>& Matrix<T>::operator+= (T rhs) {
+  for (size_t i = 0; i < num_rows(); ++i) {
+    for (size_t j = 0; j < num_columns(); ++j) {
+      mat_[i][j] += rhs;
+    }
+  }
+  return *this;
+}
+
+template <class T>
+Matrix<T> Matrix<T>::operator* (T rhs) const {
+  Matrix<T> multiplied(*this);
+  for (size_t i = 0; i < num_rows(); ++i) {
+    for (size_t j = 0; j < num_columns(); ++j) {
+      multiplied[i][j] *= rhs;
+    }
+  }
+  return multiplied;
+}
+
+template <class T>
+Matrix<T>& Matrix<T>::operator*= (T rhs) {
+  for (size_t i = 0; i < num_rows(); ++i) {
+    for (size_t j = 0; j < num_columns(); ++j) {
+      mat_[i][j] *= rhs;
+    }
+  }
+  return *this;
+}
+
+template <class T>
+Matrix<T> Matrix<T>::operator* (const Matrix<T>& rhs) const {
+  // Check if matrices are MxN * NxP
+  assert(num_columns() == rhs.num_rows());
+  Matrix<T> multiplied(num_rows(), rhs.num_columns(), T{0});
+  for (size_t i = 0; i < num_rows(); ++i) {
+    for (size_t j = 0; j < rhs.num_columns(); ++j) {
+      for (size_t k = 0; k < num_columns(); ++k)
+        multiplied[i][j] += mat_[i][k] * rhs[k][j];
+    }
+  }
+  return multiplied;
+}
+
+template <class T>
+Matrix<T>& Matrix<T>::operator*= (const Matrix<T>& rhs) {
+  mat_ = std::move((*this * rhs).mat_);
+  return *this;
+}
+
+template <class T>
+Matrix<T> Matrix<T>::operator/ (T rhs) const {
+  // Check if dividor is equal 0.
+  assert(!IsZero(rhs));
+  Matrix<T> divided(*this);
+  for (size_t i = 0; i < num_rows(); ++i) {
+    for (size_t j = 0; j < num_columns(); ++j) {
+      divided[i][j] /= rhs;
+    }
+  }
+  return divided;
+}
+
+template <class T>
+Matrix<T>& Matrix<T>::operator/= (T rhs) {
+  // Check if dividor is equal 0.
+  assert(!IsZero(rhs));
+  for (size_t i = 0; i < num_rows(); ++i) {
+    for (size_t j = 0; j < num_columns(); ++j) {
+      mat_[i][j] /= rhs;
+    }
+  }
+  return *this;
+}
+
+template <class T>
+Matrix<T>& Matrix<T>::Transpose() {
+  // Remember primar values.
+  size_t columns = num_columns();
+  size_t rows = num_rows();
+
+  // Allocate needed memory for needed columns or rows.
+  if (columns < rows) {
+    for (size_t i = 0; i < columns; ++i) {
+      mat_[i].resize(rows);
+    }
+  } else if (columns > rows) {
+    for (size_t i = 0; i < columns - rows; ++i) {
+      mat_.push_back(std::vector<T>(rows));
+    }
+  }
+  size_t minimum = std::min(rows, columns);
+  size_t maximum = std::max(rows, columns);
+  // Square transposition.
+  for (size_t i = 0; i < minimum; ++i) {
+    for (size_t j = 0; j <= i; ++j) {
+      std::swap(mat_[j][i], mat_[i][j]);
+    }
+  }
+  // Move the rest of data.
+  for (size_t i = 0; i < minimum; ++i) {
+    for (size_t j = minimum; j < maximum; ++j) {
+      std::swap(mat_[i][j], mat_[j][i]);
+    }
+  }
+  // Resize not used columns / rows.
+  if (columns < rows) {
+    mat_.erase(mat_.begin() + columns, mat_.end());
+  } else if (columns > rows) {
+    for (size_t i = 0; i < rows; ++i) {
+      mat_[i].resize(rows);
+    }
+  }
+  return *this;
+}
+
+template <class T>
+Matrix<T> Transpose(const Matrix<T>& matrix) {
+  Matrix<T> transposed(matrix);
+  return transposed.Transpose();
+}
+
+template <class T>
+Matrix<T>& Matrix<T>::RowAddition(size_t add_to, size_t add_from) {
+  // Check if rows are within range.
+  assert(add_to < num_rows() && add_from < num_rows());
+  for (size_t i = 0; i < num_columns(); ++i)
+    mat_[add_to][i] += mat_[add_from][i];
+  return *this;
+}
+
+template <class T>
+Matrix<T> RowAddition(const Matrix<T>& matrix, size_t add_to, size_t add_from) {
+  Matrix<T> added(matrix);
+  return added.RowAddition(add_to, add_from);
+}
+
+template <class T>
+Matrix<T>& Matrix<T>::RowMultiplication(size_t row, T value) {
+  // Check if row is within range and if value is != 0;
+  assert(row < num_rows() && !IsZero(value));
+  for (size_t i = 0; i < num_columns(); ++i)
+    mat_[row][i] *= value;
+  return *this;
+}
+
+template <class T>
+Matrix<T> RowMultiplication(const Matrix<T>& matrix, size_t row, T value) {
+  Matrix<T> multiplied(matrix);
+  return multiplied.RowMultiplication(row, value);
+}
+
+template <class T>
+Matrix<T>& Matrix<T>::RowSwitch(size_t row1, size_t row2) {
+  // Check if rows are within range.
+  assert(row1 < num_rows() && row2 < num_rows());
+  std::swap(mat_[row1], mat_[row2]);
+  return *this;
+}
+
+template <class T>
+Matrix<T> RowSwitch(const Matrix<T>& matrix,
+                      size_t row1, size_t row2) {
+  Matrix<T> switched(matrix);
+  return switched.RowSwitch(row1, row2);
+}
+
+/*
+ *
+ * Others
+ *
+*/
+
+// Compare different types.
+// Compare with eps value for floating point matrices.
+template <class T> template <class Y>
+bool Matrix<T>::equal(const Matrix<Y>& mat_y, T eps) {
+  if (num_rows() != mat_y.num_rows() || num_columns() != mat_y.num_columns())
+    return false;
+  if (eps < 0.0) {
+    for (size_t i = 0; i < num_rows(); ++i) {
+      for (size_t j = 0; j < num_columns(); ++j) {
+        if (mat_[i][j] != static_cast<T>(mat_y[i][j]))
+          return false;
+      }
+    }
+  } else {
+    // Check if near equal.
+    for (size_t i = 0; i < num_rows(); ++i) {
+      for (size_t j = 0; j < num_columns(); ++j) {
+        if (!IsZero(mat_[i][j] - static_cast<T>(mat_y[i][j]), eps))
+          return false;
+      }
+    }
+  }
+  return true;
+}
+
+} // namesapce delgon
