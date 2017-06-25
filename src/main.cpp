@@ -3,6 +3,8 @@
 #include <vector>
 
 #include "matrix/matrix.h"
+#include <omp.h>
+#include "timer.h"
 
 template <class T>
 void PrintMatrix(const delgon::Matrix<T>& mat) {
@@ -16,6 +18,7 @@ void PrintMatrix(const delgon::Matrix<T>& mat) {
 }
 
 int main() {
+  /*
   delgon::Matrix<double> mat_d(2, 3, 5);
   delgon::Matrix<float> mat_f(2, 3, 5);
   delgon::Matrix<float> mat_f2(4, 8, 5);
@@ -78,6 +81,16 @@ int main() {
   PrintMatrix(op_1.RowSwitch(2, 0));
   op_1[1][1] = 9;
   PrintMatrix(op_1);
+*/
 
+  delgon::Matrix<double> m1(50, 30, 1.11);
+  delgon::Matrix<double> m2(30, 60, 2.22);
+  delgon::Matrix<double> mm(1, 1);
+  delgon::Timer t;
+
+  for (int i = 0; i < 1; ++i)
+    mm = delgon::Matrix<double>(std::move(m1 * m2));
+
+  printf("%s\n", t.Formatted().c_str());
   return 0;
 }

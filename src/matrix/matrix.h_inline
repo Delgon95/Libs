@@ -1,5 +1,6 @@
 #include <cassert>
 #include <cmath>
+//#include <omp.h>
 
 namespace delgon {
 namespace {
@@ -211,9 +212,12 @@ Matrix<T>& Matrix<T>::operator*= (T rhs) {
 template <class T>
 Matrix<T> Matrix<T>::operator* (const Matrix<T>& rhs) const {
   // Check if matrices are MxN * NxP
+  printf("MULT\n");
   assert(num_columns() == rhs.num_rows());
   Matrix<T> multiplied(num_rows(), rhs.num_columns(), T{0});
+//#pragma omp parallel for num_threads(2)
   for (size_t i = 0; i < num_rows(); ++i) {
+  //  printf("t= %d\n", omp_get_thread_num());
     for (size_t j = 0; j < rhs.num_columns(); ++j) {
       for (size_t k = 0; k < num_columns(); ++k)
         multiplied[i][j] += mat_[i][k] * rhs[k][j];
